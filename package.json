@@ -1,0 +1,13 @@
+{
+  "name": "harmony-furniture",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd backend && npm run dev",
+    "client": "cd frontend-app && npm run dev",
+    "seed": "cd backend && node seed.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0"
+  }
+}

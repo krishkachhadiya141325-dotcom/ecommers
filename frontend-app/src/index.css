@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+  min-height: 100vh;
+}
+
+* {
+  @apply box-border;
+}
+
+button,
+input,
+textarea,
+select {
+  @apply font-sans;
+}
+
+button:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  @apply ring-2 ring-amber-300;
+}
+
+::selection {
+  @apply bg-amber-200 text-slate-900;
+}
