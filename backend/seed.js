@@ -102,15 +102,50 @@ const seedDB = async () => {
   await Product.insertMany(products);
   console.log(`Inserted ${products.length} products`);
 
-  const adminExists = await User.findOne({ email: 'admin@harmony.com' });
-  if (!adminExists) {
-    await User.create({
-      name: 'Admin',
-      email: 'admin@harmony.com',
-      password: 'Admin@1234',
-      role: 'admin',
-    });
-    console.log('Admin user created: admin@harmony.com / Admin@1234');
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@gmail.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  const adminName = process.env.ADMIN_NAME || 'Admin';
+  const adminRole = 'admin';
+
+  let admin = await User.findOne({ role: adminRole });
+  if (!admin) {
+    const existing = await User.findOne({ email: adminEmail });
+    if (existing) {
+      existing.role = adminRole;
+      existing.name = adminName;
+      existing.password = adminPassword;
+      await existing.save();
+      console.log(`Promoted existing account to admin: ${adminEmail}`);
+    } else {
+      await User.create({
+        name: adminName,
+        email: adminEmail,
+        password: adminPassword,
+        role: adminRole,
+      });
+      console.log(`Admin user created: ${adminEmail} / ${adminPassword}`);
+    }
+  } else {
+    let updated = false;
+    if (admin.email !== adminEmail) {
+      admin.email = adminEmail;
+      updated = true;
+    }
+    if (admin.name !== adminName) {
+      admin.name = adminName;
+      updated = true;
+    }
+    const passwordMatches = await admin.comparePassword(adminPassword);
+    if (!passwordMatches) {
+      admin.password = adminPassword;
+      updated = true;
+    }
+    if (updated) {
+      await admin.save();
+      console.log(`Admin user updated: ${adminEmail} / ${adminPassword}`);
+    } else {
+      console.log(`Admin user exists: ${adminEmail}`);
+    }
   }
 
   mongoose.connection.close();

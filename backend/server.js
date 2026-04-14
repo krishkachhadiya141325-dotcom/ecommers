@@ -4,8 +4,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
-
-connectDB();
+const User = require('./models/User');
 
 const app = express();
 
@@ -33,4 +32,56 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+const ensureAdminUser = async () => {
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@gmail.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  const adminName = process.env.ADMIN_NAME || 'Admin';
+  const adminRole = 'admin';
+
+  const existingAdmin = await User.findOne({ role: adminRole });
+  if (existingAdmin) {
+    let updated = false;
+    if (existingAdmin.email !== adminEmail) {
+      existingAdmin.email = adminEmail;
+      updated = true;
+    }
+    if (existingAdmin.name !== adminName) {
+      existingAdmin.name = adminName;
+      updated = true;
+    }
+    const passwordMatches = await existingAdmin.comparePassword(adminPassword);
+    if (!passwordMatches) {
+      existingAdmin.password = adminPassword;
+      updated = true;
+    }
+    if (updated) {
+      await existingAdmin.save();
+      console.log(`Admin user updated: ${adminEmail} / ${adminPassword}`);
+    } else {
+      console.log(`Admin user exists: ${adminEmail}`);
+    }
+    return;
+  }
+
+  const adminByEmail = await User.findOne({ email: adminEmail });
+  if (adminByEmail) {
+    adminByEmail.role = adminRole;
+    adminByEmail.name = adminName;
+    adminByEmail.password = adminPassword;
+    await adminByEmail.save();
+    console.log(`Promoted existing account to admin: ${adminEmail}`);
+    return;
+  }
+
+  await User.create({ name: adminName, email: adminEmail, password: adminPassword, role: adminRole });
+  console.log(`Admin user created: ${adminEmail} / ${adminPassword}`);
+};
+
+const startServer = async () => {
+  await connectDB();
+  await ensureAdminUser();
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+};
+
+startServer();
